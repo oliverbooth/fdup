@@ -23,7 +23,9 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
         AnsiConsole.MarkupLineInterpolated($"Searching [cyan]{inputDirectory.FullName}[/]");
         AnsiConsole.MarkupLine($"Recursive mode is {(settings.Recursive ? "[green]ON" : "[red]OFF")}[/]");
 
-        await SearchAsync(inputDirectory, settings);
+        await AnsiConsole.Status()
+            .StartAsync("Waiting to hash files...", DoHashWaitAsync)
+            .ConfigureAwait(false);
 
         AnsiConsole.WriteLine();
 
@@ -51,11 +53,35 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
             AnsiConsole.MarkupLineInterpolated($"[yellow]Found [cyan]{duplicates}[/] duplicates![/]");
 
         return 0;
+
+        async Task DoHashWaitAsync(StatusContext ctx)
+        {
+            await WaitForHashCompletionAsync(settings, inputDirectory, ctx);
+        }
     }
 
-    private async Task SearchAsync(DirectoryInfo inputDirectory, ListSettings settings)
+    private async Task WaitForHashCompletionAsync(ListSettings settings,
+        DirectoryInfo inputDirectory,
+        StatusContext ctx)
     {
         var tasks = new List<Task>();
+        SearchDuplicates(inputDirectory, settings, tasks);
+        await Task.Run(() =>
+        {
+            int incompleteTasks;
+            do
+            {
+                incompleteTasks = tasks.Count(t => !t.IsCompleted);
+                ctx.Status($"Waiting to hash {incompleteTasks} {(incompleteTasks == 1 ? "file" : "files")}...");
+                ctx.Refresh();
+            } while (tasks.Count > 0 && incompleteTasks > 0);
+
+            ctx.Status("Hash complete");
+        }).ConfigureAwait(false);
+    }
+
+    private void SearchDuplicates(DirectoryInfo inputDirectory, ListSettings settings, ICollection<Task> tasks)
+    {
         var directoryStack = new Stack<DirectoryInfo>([inputDirectory]);
         while (directoryStack.Count > 0)
         {
@@ -77,8 +103,6 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
                 tasks.Add(Task.Run(() => ProcessFile(file)));
             }
         }
-
-        await Task.WhenAll(tasks);
     }
 
     private void ProcessFile(FileInfo file)
