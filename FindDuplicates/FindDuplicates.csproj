@@ -6,6 +6,30 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AssemblyName>fdup</AssemblyName>
+        <VersionPrefix>1.0.0</VersionPrefix>
+        <Authors>Oliver Booth</Authors>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(VersionSuffix)' != '' And '$(BuildNumber)' == ''">
+        <Version>$(VersionPrefix)-$(VersionSuffix)</Version>
+        <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
+        <FileVersion>$(VersionPrefix).0</FileVersion>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(VersionSuffix)' != '' And '$(BuildNumber)' != ''">
+        <Version>$(VersionPrefix)-$(VersionSuffix).$(BuildNumber)</Version>
+        <AssemblyVersion>$(VersionPrefix).$(BuildNumber)</AssemblyVersion>
+        <FileVersion>$(VersionPrefix).$(BuildNumber)</FileVersion>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(VersionSuffix)' == ''">
+        <Version>$(VersionPrefix)</Version>
+        <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
+        <FileVersion>$(VersionPrefix).0</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
