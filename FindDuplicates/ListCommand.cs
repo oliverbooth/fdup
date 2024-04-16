@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using Spectre.Console;
@@ -92,15 +93,29 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
 
             if (settings.Recursive)
             {
-                foreach (DirectoryInfo childDirectory in currentDirectory.EnumerateDirectories())
-                    directoryStack.Push(childDirectory);
+                try
+                {
+                    foreach (DirectoryInfo childDirectory in currentDirectory.EnumerateDirectories())
+                        directoryStack.Push(childDirectory);
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.MarkupLineInterpolated($"[red]Error:[/] {ex.Message}");
+                }
             }
 
-            foreach (FileInfo file in currentDirectory.EnumerateFiles())
+            try
             {
-                string relativeFilePath = Path.GetRelativePath(inputDirectory.FullName, file.FullName);
-                AnsiConsole.MarkupLineInterpolated($"Checking hash for [cyan]{relativeFilePath}[/]");
-                tasks.Add(Task.Run(() => ProcessFile(file)));
+                foreach (FileInfo file in currentDirectory.EnumerateFiles())
+                {
+                    string relativeFilePath = Path.GetRelativePath(inputDirectory.FullName, file.FullName);
+                    AnsiConsole.MarkupLineInterpolated($"Checking hash for [cyan]{relativeFilePath}[/]");
+                    tasks.Add(Task.Run(() => ProcessFile(file)));
+                }
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLineInterpolated($"[red]Error:[/] {ex.Message}");
             }
         }
     }
@@ -108,17 +123,24 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
     private void ProcessFile(FileInfo file)
     {
         Span<byte> buffer = stackalloc byte[64];
-        using FileStream stream = file.OpenRead();
-        using BufferedStream bufferedStream = new BufferedStream(stream, 1048576 /* 1MB */);
-        SHA512.HashData(bufferedStream, buffer);
-        string hash = ByteSpanToString(buffer);
-        Trace.WriteLine($"{file.FullName}: {hash}");
+        try
+        {
+            using FileStream stream = file.OpenRead();
+            using BufferedStream bufferedStream = new BufferedStream(stream, 1048576 /* 1MB */);
+            SHA512.HashData(bufferedStream, buffer);
+            string hash = ByteSpanToString(buffer);
+            Trace.WriteLine($"{file.FullName}: {hash}");
 
-        if (!_fileHashMap.TryGetValue(hash, out List<FileInfo>? cache))
-            _fileHashMap[hash] = cache = new List<FileInfo>();
+            if (!_fileHashMap.TryGetValue(hash, out List<FileInfo>? cache))
+                _fileHashMap[hash] = cache = new List<FileInfo>();
 
-        lock (cache)
-            cache.Add(file);
+            lock (cache)
+                cache.Add(file);
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLineInterpolated($"[red]Error:[/] {ex.Message}");
+        }
     }
 
     private static string ByteSpanToString(ReadOnlySpan<byte> buffer)
