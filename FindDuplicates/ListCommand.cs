@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using Spectre.Console;
@@ -8,7 +9,7 @@ namespace FindDuplicates;
 
 internal sealed class ListCommand : AsyncCommand<ListSettings>
 {
-    private readonly Dictionary<string, List<FileInfo>> _fileHashMap = new();
+    private readonly ConcurrentDictionary<string, List<FileInfo>> _fileHashMap = new();
 
     public override async Task<int> ExecuteAsync(CommandContext context, ListSettings settings)
     {
