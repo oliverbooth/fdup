@@ -1,0 +1,53 @@
+name: .NET
+
+on:
+  push:
+    branches:
+      - '*'
+      - '*/*'
+  pull_request:
+    branches:
+      - '*'
+      - '*/*'
+
+jobs:
+  build:
+    name: "Build & Test"
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: |
+          6.0.x
+          7.0.x
+          8.0.x
+
+    - name: Add NuGet source
+      run: dotnet nuget add source --username oliverbooth --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/oliverbooth/index.json"
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Test .NET 6
+      run: dotnet test --no-build --verbosity normal --configuration Release --framework net6.0 --collect:"XPlat Code Coverage" --results-directory test-results/net6.0
+
+    - name: Test .NET 7
+      run: dotnet test --no-build --verbosity normal --configuration Release --framework net7.0 --collect:"XPlat Code Coverage" --results-directory test-results/net7.0
+
+    - name: Test .NET 8
+      run: dotnet test --no-build --verbosity normal --configuration Release --framework net8.0 --collect:"XPlat Code Coverage" --results-directory test-results/net8.0
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4.0.0
+      with:
+        directory: test-results
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: oliverbooth/X10D
