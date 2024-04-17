@@ -8,7 +8,7 @@ namespace FindDuplicates;
 
 internal sealed class ListCommand : AsyncCommand<ListSettings>
 {
-    private readonly ConcurrentDictionary<string, List<FileInfo>> _fileHashMap = new();
+    private readonly ConcurrentDictionary<string, ConcurrentBag<FileInfo>> _fileHashMap = new();
 
     public override async Task<int> ExecuteAsync(CommandContext context, ListSettings settings)
     {
@@ -29,7 +29,7 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
         AnsiConsole.WriteLine();
 
         int duplicates = 0;
-        foreach ((string hash, List<FileInfo> files) in _fileHashMap)
+        foreach ((string hash, ConcurrentBag<FileInfo> files) in _fileHashMap)
         {
             int fileCount = files.Count;
 
@@ -119,11 +119,8 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
             if (settings.Verbose)
                 AnsiConsole.WriteLine($"{file.FullName} ->\n    {hash}");
 
-            if (!_fileHashMap.TryGetValue(hash, out List<FileInfo>? cache))
-                _fileHashMap[hash] = cache = new List<FileInfo>();
-
-            lock (cache)
-                cache.Add(file);
+            ConcurrentBag<FileInfo> cache = _fileHashMap.GetOrAdd(hash, _ => []);
+            cache.Add(file);
         }
         catch (Exception ex)
         {
