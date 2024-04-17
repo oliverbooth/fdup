@@ -11,7 +11,7 @@ internal sealed class ListSettings : CommandSettings
     public string InputPath { get; set; } = ".";
 
     [CommandOption("-r|--recursive")]
-    [Description("When this flag is set, the directory will be scanned recursively. This may take longer.")]
+    [Description("Scans the directory recursively. This may increase run time and is not advised to use when at high order directories such as C: or /")]
     [DefaultValue(false)]
     public bool Recursive { get; set; } = false;
 
