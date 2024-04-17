@@ -89,18 +89,7 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
             if (relativePath != ".")
                 AnsiConsole.MarkupLineInterpolated($"Searching [cyan]{relativePath}[/]");
 
-            if (settings.Recursive)
-            {
-                try
-                {
-                    foreach (DirectoryInfo childDirectory in currentDirectory.EnumerateDirectories())
-                        directoryStack.Push(childDirectory);
-                }
-                catch (Exception ex)
-                {
-                    AnsiConsole.MarkupLineInterpolated($"[red]Error:[/] {ex.Message}");
-                }
-            }
+            AddChildDirectories(settings, currentDirectory, directoryStack);
 
             try
             {
@@ -135,6 +124,22 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
 
             lock (cache)
                 cache.Add(file);
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLineInterpolated($"[red]Error:[/] {ex.Message}");
+        }
+    }
+
+    private static void AddChildDirectories(ListSettings settings, DirectoryInfo directory, Stack<DirectoryInfo> stack)
+    {
+        if (!settings.Recursive)
+            return;
+
+        try
+        {
+            foreach (DirectoryInfo childDirectory in directory.EnumerateDirectories())
+                stack.Push(childDirectory);
         }
         catch (Exception ex)
         {
