@@ -57,8 +57,8 @@ jobs:
             ./publish/linux-x64/fdup
             ./publish/osx-x64/fdup
           asset_name: |
-            fdup-${{ steps.get_version.outputs.VERSION }}-win-x64.exe
-            fdup-${{ steps.get_version.outputs.VERSION }}-win-x86.exe
+            fdup-${{ steps.get_version.outputs.VERSION }}-win_x64.exe
+            fdup-${{ steps.get_version.outputs.VERSION }}-win_x86.exe
             fdup-${{ steps.get_version.outputs.VERSION }}-linux_x64
             fdup-${{ steps.get_version.outputs.VERSION }}-macos_x64
           asset_content_type: application/octet-stream
