@@ -11,22 +11,23 @@ fdup is a small command-line utility written in C# to quickly and easily find du
 ```bash
 $ fdup --help
 USAGE:
-    fdup <path> [OPTIONS]
+    fdup.exe [path] [OPTIONS]
 
 ARGUMENTS:
-    <path>    The path to search
+    [path]    The path to search. Defaults to the current directory
 
 OPTIONS:
     -h, --help         Prints help information
     -v, --version      Prints version information
     -r, --recursive    When this flag is set, the directory will be scanned recursively. This may take longer
+        --verbose      Enable verbose output
 ```
 
 ## Example
 ```bash
 $ echo "Hello World" > file1
 $ echo "Goodbye World" > file2
-$ fdup .
+$ fdup
 Searching /home/user/example
 Recursive mode is OFF
 Checking hash for file2
@@ -34,7 +35,7 @@ Checking hash for file1
 
 No duplicates found!
 $ echo "Hello World" > file2
-$ fdup .
+$ fdup
 Searching /home/user/example
 Recursive mode is OFF
 Checking hash for file2
