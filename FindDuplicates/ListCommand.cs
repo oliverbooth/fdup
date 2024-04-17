@@ -33,17 +33,17 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
         {
             int fileCount = files.Count;
 
-            if (fileCount > 1)
-            {
-                duplicates += fileCount;
-                AnsiConsole.MarkupLineInterpolated($"Found [cyan]{fileCount}[/] identical files");
-                AnsiConsole.MarkupLineInterpolated($"SHA512 [green]{hash}[/]:");
+            if (fileCount <= 1)
+                continue;
 
-                foreach (FileInfo file in files)
-                    AnsiConsole.MarkupLineInterpolated($"- {file.FullName}");
+            duplicates += fileCount;
+            AnsiConsole.MarkupLineInterpolated($"Found [cyan]{fileCount}[/] identical files");
+            AnsiConsole.MarkupLineInterpolated($"{settings.Algorithm.Humanize()} [green]{hash}[/]:");
 
-                AnsiConsole.WriteLine();
-            }
+            foreach (FileInfo file in files)
+                AnsiConsole.MarkupLineInterpolated($"- {file.FullName}");
+
+            AnsiConsole.WriteLine();
         }
 
         if (duplicates == 0)
