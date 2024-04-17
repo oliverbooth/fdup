@@ -8,6 +8,7 @@ namespace FindDuplicates;
 
 internal sealed class ListCommand : AsyncCommand<ListSettings>
 {
+    private readonly ConcurrentDictionary<long, ConcurrentBag<FileInfo>> _fileSizeMap = new();
     private readonly ConcurrentDictionary<string, ConcurrentBag<FileInfo>> _fileHashMap = new();
 
     public override async Task<int> ExecuteAsync(CommandContext context, ListSettings settings)
@@ -95,9 +96,15 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
             {
                 foreach (FileInfo file in currentDirectory.EnumerateFiles())
                 {
-                    string relativeFilePath = Path.GetRelativePath(inputDirectory.FullName, file.FullName);
-                    AnsiConsole.MarkupLineInterpolated($"Checking hash for [cyan]{relativeFilePath}[/]");
-                    tasks.Add(Task.Run(() => ProcessFile(file, settings)));
+                    try
+                    {
+                        ConcurrentBag<FileInfo> cache = _fileSizeMap.GetOrAdd(file.Length, _ => []);
+                        cache.Add(file);
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.MarkupLineInterpolated($"[red]Error:[/] {ex.Message}");
+                    }
                 }
             }
             catch (Exception ex)
@@ -105,6 +112,30 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
                 AnsiConsole.MarkupLineInterpolated($"[red]Error:[/] {ex.Message}");
             }
         }
+
+        foreach ((_, ConcurrentBag<FileInfo> files) in _fileSizeMap)
+        {
+            if (files.Count < 1)
+                continue;
+
+            tasks.Add(Task.Run(() =>
+            {
+                foreach (FileInfo file in files)
+                {
+                    try
+                    {
+                        AnsiConsole.MarkupLineInterpolated($"Checking hash for [cyan]{file.Name}[/]");
+                        ProcessFile(file, settings);
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.MarkupLineInterpolated($"[red]Error:[/] {ex.Message}");
+                    }
+                }
+            }));
+        }
+
+        _fileSizeMap.Clear();
     }
 
     private void ProcessFile(FileInfo file, ListSettings settings)
