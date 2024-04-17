@@ -1,0 +1,66 @@
+name: Tagged Pre-Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
+
+jobs:
+  release:
+    name: "Tagged Pre-Release"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Get version from tag
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
+
+      - name: Build and Publish
+        run: |
+          dotnet publish -c Release -p PublishSingleFile=true -p:VersionSuffix='prerelease' -p:BuildNumber=${{ github.run_number }} -o ./publish/win-x64 -r win-x64
+          dotnet publish -c Release -p PublishSingleFile=true -p:VersionSuffix='prerelease' -p:BuildNumber=${{ github.run_number }} -o ./publish/win-x86 -r win-x86
+          dotnet publish -c Release -p PublishSingleFile=true -p:VersionSuffix='prerelease' -p:BuildNumber=${{ github.run_number }} -o ./publish/linux-x64 -r linux-x64
+          dotnet publish -c Release -p PublishSingleFile=true -p:VersionSuffix='prerelease' -p:BuildNumber=${{ github.run_number }} -o ./publish/osx-x64 -r osx-x64
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: publish
+          path: publish/
+
+      - name: Create Release
+        id: create_release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+
+      - name: Upload Release Assets
+        id: upload-release-assets
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: |
+            ./publish/win-x64/fdup.exe
+            ./publish/win-x86/fdup.exe
+            ./publish/linux-x64/fdup
+            ./publish/osx-x64/fdup
+          asset_name: |
+            fdup-${{ steps.get_version.outputs.VERSION }}-win-x64.exe
+            fdup-${{ steps.get_version.outputs.VERSION }}-win-x86.exe
+            fdup-${{ steps.get_version.outputs.VERSION }}-linux_x64
+            fdup-${{ steps.get_version.outputs.VERSION }}-macos_x64
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
