@@ -65,7 +65,7 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
         StatusContext ctx)
     {
         var tasks = new List<Task>();
-        SearchDuplicates(inputDirectory, settings, tasks);
+        SearchDuplicates(ctx, inputDirectory, settings, tasks);
         await Task.Run(() =>
         {
             int incompleteTasks;
@@ -80,15 +80,14 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
         }).ConfigureAwait(false);
     }
 
-    private void SearchDuplicates(DirectoryInfo inputDirectory, ListSettings settings, ICollection<Task> tasks)
+    private void SearchDuplicates(StatusContext ctx, DirectoryInfo inputDirectory, ListSettings settings, ICollection<Task> tasks)
     {
         var directoryStack = new Stack<DirectoryInfo>([inputDirectory]);
+
         while (directoryStack.Count > 0)
         {
             DirectoryInfo currentDirectory = directoryStack.Pop();
-            string relativePath = Path.GetRelativePath(inputDirectory.FullName, currentDirectory.FullName);
-            if (relativePath != ".")
-                AnsiConsole.MarkupLineInterpolated($"Searching [cyan]{relativePath}[/]");
+            ctx.Status(currentDirectory.FullName.EscapeMarkup());
 
             AddChildDirectories(settings, currentDirectory, directoryStack);
 
