@@ -10,6 +10,11 @@ internal sealed class ListSettings : CommandSettings
     [DefaultValue(".")]
     public string InputPath { get; set; } = ".";
 
+    [CommandOption("-a|--algorithm <algorithm>")]
+    [Description("The hash algorithm used for comparison. Defaults to SHA512. For a list of all available algorithms, run fdup alglist")]
+    [DefaultValue(Algorithm.Sha512)]
+    public Algorithm Algorithm { get; set; } = Algorithm.Sha512;
+
     [CommandOption("-r|--recursive")]
     [Description("Scans the directory recursively. This may increase run time and is not advised to use when at high order directories such as C: or /")]
     [DefaultValue(false)]

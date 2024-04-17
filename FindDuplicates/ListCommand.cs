@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
-using System.Security.Cryptography;
 using System.Text;
+using Humanizer;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -21,6 +21,7 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
 
         AnsiConsole.MarkupLineInterpolated($"Searching [cyan]{inputDirectory.FullName}[/]");
         AnsiConsole.MarkupLine($"Recursive mode is {(settings.Recursive ? "[green]ON" : "[red]OFF")}[/]");
+        AnsiConsole.MarkupLine($"Using hash algorithm [cyan]{settings.Algorithm.Humanize()}[/]");
 
         await AnsiConsole.Status()
             .StartAsync("Waiting to hash files...", DoHashWaitAsync)
@@ -109,12 +110,12 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
 
     private void ProcessFile(FileInfo file, ListSettings settings)
     {
-        Span<byte> buffer = stackalloc byte[64];
+        Span<byte> buffer = stackalloc byte[settings.Algorithm.GetByteCount()];
         try
         {
             using FileStream stream = file.OpenRead();
             using BufferedStream bufferedStream = new BufferedStream(stream, 1048576 /* 1MB */);
-            SHA512.HashData(bufferedStream, buffer);
+            settings.Algorithm.HashData(bufferedStream, buffer);
             string hash = ByteSpanToString(buffer);
             if (settings.Verbose)
                 AnsiConsole.WriteLine($"{file.FullName} ->\n    {hash}");
@@ -146,7 +147,7 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
 
     private static string ByteSpanToString(ReadOnlySpan<byte> buffer)
     {
-        var builder = new StringBuilder();
+        var builder = new StringBuilder(buffer.Length * 2);
 
         foreach (byte b in buffer)
             builder.Append($"{b:X2}");
