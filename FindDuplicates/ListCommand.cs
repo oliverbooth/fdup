@@ -15,7 +15,7 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
         var inputDirectory = new DirectoryInfo(settings.InputPath);
         if (!inputDirectory.Exists)
         {
-            AnsiConsole.MarkupLine($"[red]{inputDirectory} does not exist![/]");
+            AnsiConsole.MarkupLineInterpolated($"[red]{inputDirectory} does not exist![/]");
             return -1;
         }
 
