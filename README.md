@@ -11,7 +11,7 @@ fdup is a small command-line utility written in C# to quickly and easily find du
 ```bash
 $ fdup --help
 USAGE:
-    fdup.exe [path] [OPTIONS]
+    fdup [path] [OPTIONS]
 
 ARGUMENTS:
     [path]    The path to search. Defaults to the current directory
