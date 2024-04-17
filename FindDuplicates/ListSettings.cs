@@ -13,4 +13,9 @@ internal sealed class ListSettings : CommandSettings
     [Description("When this flag is set, the directory will be scanned recursively. This may take longer.")]
     [DefaultValue(false)]
     public bool Recursive { get; set; } = false;
+
+    [CommandOption("--verbose")]
+    [Description("Enable verbose output.")]
+    [DefaultValue(false)]
+    public bool Verbose { get; set; } = false;
 }

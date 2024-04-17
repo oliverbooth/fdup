@@ -1,6 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using Spectre.Console;
@@ -110,7 +108,7 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
                 {
                     string relativeFilePath = Path.GetRelativePath(inputDirectory.FullName, file.FullName);
                     AnsiConsole.MarkupLineInterpolated($"Checking hash for [cyan]{relativeFilePath}[/]");
-                    tasks.Add(Task.Run(() => ProcessFile(file)));
+                    tasks.Add(Task.Run(() => ProcessFile(file, settings)));
                 }
             }
             catch (Exception ex)
@@ -120,7 +118,7 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
         }
     }
 
-    private void ProcessFile(FileInfo file)
+    private void ProcessFile(FileInfo file, ListSettings settings)
     {
         Span<byte> buffer = stackalloc byte[64];
         try
@@ -129,7 +127,8 @@ internal sealed class ListCommand : AsyncCommand<ListSettings>
             using BufferedStream bufferedStream = new BufferedStream(stream, 1048576 /* 1MB */);
             SHA512.HashData(bufferedStream, buffer);
             string hash = ByteSpanToString(buffer);
-            Trace.WriteLine($"{file.FullName}: {hash}");
+            if (settings.Verbose)
+                AnsiConsole.WriteLine($"{file.FullName} ->\n    {hash}");
 
             if (!_fileHashMap.TryGetValue(hash, out List<FileInfo>? cache))
                 _fileHashMap[hash] = cache = new List<FileInfo>();
